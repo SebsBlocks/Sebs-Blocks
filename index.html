@@ -2,6 +2,9 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+<link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#071238">
@@ -414,7 +417,7 @@ button { touch-action:manipulation; }
       <button class="mode-btn classic" id="classicBtn">♾️ &nbsp; CLASSIC</button>
       <button class="mode-btn adventure" id="adventureBtn">🧭 &nbsp; ADVENTURE</button>
       <button class="mode-btn hardcore" id="hardcoreBtn">⏱️ &nbsp; HARDCORE</button>
-      <div class="muted">Classic: deine Auswahl · Adventure: alle Formen · Hardcore: 10 Sekunden pro Zug</div>
+      <div class="muted">Classic: deine Auswahl · Adventure: alle Formen · Hardcore: 5 Sekunden pro Zug</div>
     </div>
     <div class="menu-grid">
       <button id="settingsBtn"><span class="emoji">⚙️</span>Einstellungen</button>
@@ -439,7 +442,7 @@ button { touch-action:manipulation; }
         <button class="small-btn" id="homeBtn">⌂ Menü</button>
       </div>
     </div>
-    <div class="hardcore-timer" id="hardcoreTimer">⏱️ <span id="timerValue">10.0</span> Sekunden</div>
+    <div class="hardcore-timer" id="hardcoreTimer">⏱️ <span id="timerValue">5.0</span> Sekunden</div>
     <div class="stat-row">
       <div class="stat-pill" id="modeLabel">CLASSIC</div>
       <div class="stat-pill" id="combo">✨ Combo x0</div>
@@ -567,7 +570,7 @@ function runPopupQueue() {
   setTimeout(()=>{popupBusy=false;runPopupQueue();},item.duration);
 }
 let combo = 0, grace = 3, running = false, paused = false, newRecordShown = false;
-let hardcoreTimeLeft = 10, hardcoreTimerId = null, hardcoreDeadline = 0;
+let hardcoreTimeLeft = 5, hardcoreTimerId = null, hardcoreDeadline = 0;
 let drag = null, ghost = null, soundOn = true, musicOn = localStorage.getItem("sebsBlocksMusicOn")==="true", audioCtx = null, musicTimer = null, musicStep = 0;
 let lobbyRecordMode = localStorage.getItem("sebsBlocksLobbyRecordMode") || "classic";
 if(!["classic","adventure","hardcore"].includes(lobbyRecordMode)) lobbyRecordMode="classic";
@@ -575,7 +578,7 @@ let pointerStart = null;
 
 function randomColor() { return Math.floor(Math.random()*COLORS.length); }
 function randomShape() {
-  const pool = mode === "adventure" ? SHAPES : SHAPES.filter(s=>enabled[s.id]);
+  const pool = mode === "classic" ? SHAPES.filter(s=>enabled[s.id]) : SHAPES;
   const s = pool[Math.floor(Math.random()*pool.length)] || SHAPES[0];
   return {...s,color:randomColor(),key:Math.random().toString(36).slice(2)};
 }
@@ -677,13 +680,13 @@ function updateStats() {
 }
 function newGame(nextMode=mode) {
   stopHardcoreTimer();
-  popupQueue=[];popupBusy=false;mode=nextMode;score=0;combo=0;grace=3;running=true;paused=false;drag=null;newRecordShown=false;hardcoreTimeLeft=10;
+  popupQueue=[];popupBusy=false;mode=nextMode;score=0;combo=0;grace=3;running=true;paused=false;drag=null;newRecordShown=false;hardcoreTimeLeft=5;
   $("menu").style.display="none";$("game").style.display="block";
-  $("message").textContent=mode==="adventure"?"Adventure: Alle Blockformen sind verfügbar!":mode==="hardcore"?"HARDCORE: Setze den nächsten Block in 10 Sekunden!":"Viel Erfolg! Baue deine Combo auf.";
+  $("message").textContent=mode==="adventure"?"Adventure: Alle Blockformen sind verfügbar!":mode==="hardcore"?"HARDCORE: Setze den nächsten Block in 5 Sekunden!":"Viel Erfolg! Baue deine Combo auf.";
   makeBoard();
   pieces=[randomShape(),randomShape(),randomShape()];
   renderTray();updateStats();
-  if(mode==="hardcore") startHardcoreTimer(10);
+  if(mode==="hardcore") startHardcoreTimer(5);
 }
 function fits(shape,r,c) {
   if(!shape || r<0 || c<0) return false;
@@ -826,7 +829,7 @@ function place(shape,r,c,slot) {
   // Jeder gesetzte Block gibt mindestens 30 Punkte. Ab Combo 2 gilt der Multiplikator.
   shape.c.forEach(([dr,dc])=>board[(r+dr)*SIZE+c+dc]=shape.color);
   pieces[slot]=null;
-  if(mode==="hardcore") startHardcoreTimer(10);
+  if(mode==="hardcore") startHardcoreTimer(5);
   beep(440,.04);
 
   const rows=[],cols=[];
@@ -843,7 +846,7 @@ function place(shape,r,c,slot) {
   const lines=rows.length+cols.length;
   if(lines>0) {
     // Hardcore: erfolgreiche Linie gibt 5 Sekunden Bonus für den nächsten Zug.
-    if(mode==="hardcore") { startHardcoreTimer(15); showTimeBonus(); }
+    if(mode==="hardcore") { startHardcoreTimer(10); showTimeBonus(); }
     // Combo steigt durch erfolgreiche Linien-Züge und ist auf x5 begrenzt.
     combo=Math.min(5,combo+1);
     grace=3;
@@ -916,7 +919,7 @@ function endGame(reason="board") {
       <div style="font-size:48px">👑</div>
       <h2 style="font-size:32px;color:#ffdf68">${score.toLocaleString("de-DE")} Punkte</h2>
       <p>Dein Bestwert: <b>${best.toLocaleString("de-DE")}</b></p>
-      <p class="muted">${reason==="timeout"?"Die 10 Sekunden sind abgelaufen. Im Hardcore zählt jede Sekunde!":"Noch eine Runde? Deine nächste Bestleistung wartet!"}</p>
+      <p class="muted">${reason==="timeout"?"Die 5 Sekunden sind abgelaufen. Im Hardcore zählt jede Sekunde!":"Noch eine Runde? Deine nächste Bestleistung wartet!"}</p>
     </div>`,[
       {label:"↻ Nochmal",cls:"classic",fn:()=>newGame(mode)},
       {label:"⌂ Startmenü",cls:"secondary",fn:showMenu}
@@ -931,7 +934,7 @@ function displayTimeBonus() {
   setTimeout(()=>el.classList.remove("show"),1700);
 }
 function stopHardcoreTimer(){if(hardcoreTimerId!==null){clearInterval(hardcoreTimerId);hardcoreTimerId=null;}hardcoreDeadline=0;}
-function startHardcoreTimer(seconds=10){
+function startHardcoreTimer(seconds=5){
   stopHardcoreTimer();if(mode!=="hardcore"||!running)return;
   hardcoreTimeLeft=seconds;hardcoreDeadline=Date.now()+seconds*1000;updateStats();
   hardcoreTimerId=setInterval(()=>{
@@ -1106,7 +1109,7 @@ function helpModal() {
     <h3>✨ Combos</h3><p>Räume in aufeinanderfolgenden Zügen Linien ab, um deine Combo aufzubauen. Nach einigen Zügen ohne Linienabbau endet die Combo.</p>
     <h3>♾️ Classic</h3><p>Hier gelten deine ausgewählten Blockformen.</p>
     <h3>🧭 Adventure</h3><p>Hier stehen alle Formen zur Verfügung, auch wenn du sie in den Einstellungen für Classic ausgeschaltet hast.</p>
-    <h3>🔥 Hardcore</h3><p>Wie Adventure mit allen Blockformen – aber du musst jeden nächsten Block innerhalb von 10 Sekunden platzieren. Eine vollständige Linie gibt dir 5 Bonussekunden für den nächsten Zug.</p>
+    <h3>🔥 Hardcore</h3><p>Wie Adventure mit allen Blockformen – aber du musst jeden nächsten Block innerhalb von 5 Sekunden platzieren. Eine vollständige Linie gibt dir 5 Bonussekunden für den nächsten Zug.</p>
   `,[{label:"Alles klar!",cls:"classic",fn:()=>{}}]);
 }
 function pauseGame() {
